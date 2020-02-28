@@ -41,12 +41,13 @@
     </Row>
     <Row>
         <Key
-            android:codes="88"
-            android:keyLabel="字母X" />
+            android:codes="112"
+            android:keyLabel="清除" />
         <Key
             android:codes="48"
             android:keyLabel="0" />
         <Key android:codes="-5"
+            android:keyLabel="删除"
             android:isRepeatable="true"
             />
     </Row>
