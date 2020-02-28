@@ -4,10 +4,8 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.inputmethodservice.Keyboard;
-import android.inputmethodservice.Keyboard.Key;
 import android.inputmethodservice.KeyboardView.OnKeyboardActionListener;
 import android.os.Handler;
-import android.os.Message;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.Selection;
@@ -16,64 +14,42 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
-import android.widget.ScrollView;
-import android.widget.TextView;
-
-import androidx.annotation.NonNull;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.List;
 
 public class KeyboardUtil {
 
-    private       Context        mContext;
-    private       Activity       mActivity;
-    private       PpKeyBoardView keyboardView;
-    static        Keyboard       numKeyboard;// 数字键盘
-    public static Keyboard       keyboard;//提供给keyboardView 进行画
+    private Context mContext;
+    private Activity mActivity;
+    private PpKeyBoardView keyboardView;
+    private EditText mEditText;
+    static Keyboard numKeyboard;// 数字键盘
+    private static Keyboard keyboard;//提供给keyboardView 进行画
 
-    public  boolean                     isShow = false;
-    private InputFinishListener         inputOver;
+    public boolean isShow = false;
     private KeyBoardStateChangeListener keyBoardStateChangeListener;
-    private View                        layoutView;
-    private View                        keyBoardLayout;
+    private View layoutView;
+    private View keyBoardLayout;
 
-    // 开始输入的键盘状态设置
-    private static int inputType = 1;// 默认
-
-    public static final int INPUTTYPE_NUM_X = 4; // 数字，右下角 为X
 
     private static final int KEYBOARD_SHOW = 1;
     private static final int KEYBOARD_HIDE = 2;
 
-    private EditText   ed;
-    private Handler    mHandler;
-    private ScrollView sv_main;
-    private View       root_view;
-    private int        scrollTo = 0;
+    private EditText ed;
 
     /**
      * 最新构造方法，现在都用这个
      *
      * @param rootView rootView 需要是LinearLayout,以适应键盘
      */
-    public KeyboardUtil(Context ctx, LinearLayout rootView, ScrollView scrollView) {
+    public KeyboardUtil(Context ctx, LinearLayout rootView) {
         this.mContext = ctx;
         this.mActivity = (Activity) mContext;
         initKeyBoardView(rootView);
-        initScrollHandler(rootView, scrollView);
-    }
-
-    //设置监听事件
-    public void setInputOverListener(InputFinishListener listener) {
-        this.inputOver = listener;
     }
 
     static Keyboard getKeyBoardType() {
@@ -83,7 +59,7 @@ public class KeyboardUtil {
     private void initKeyBoardView(LinearLayout rootView) {
         LayoutInflater inflater = LayoutInflater.from(mContext);
         keyBoardLayout = inflater.inflate(R.layout.input, null);
-
+        mEditText = keyBoardLayout.findViewById(R.id.edit_text);
         keyBoardLayout.setVisibility(View.GONE);
         keyBoardLayout.setBackgroundColor(mActivity.getResources().getColor(R.color.product_list_bac));
         initLayoutHeight((LinearLayout) keyBoardLayout);
@@ -97,24 +73,11 @@ public class KeyboardUtil {
     private void initLayoutHeight(LinearLayout layoutView) {
         LinearLayout.LayoutParams keyboard_layoutlLayoutParams = (LinearLayout.LayoutParams) layoutView
                 .getLayoutParams();
-        RelativeLayout TopLayout = layoutView.findViewById(R.id.keyboard_view_top_rl);
-        ImageView IVClose = layoutView.findViewById(R.id.iv_close);
-        IVClose.setOnClickListener(new finishListener());
         if (keyboard_layoutlLayoutParams == null) {
             int height = (int) (mActivity.getResources().getDisplayMetrics().heightPixels * SIZE.KEYBOARY_H);
             layoutView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, height));
         } else {
             keyboard_layoutlLayoutParams.height = (int) (mActivity.getResources().getDisplayMetrics().heightPixels * SIZE.KEYBOARY_H);
-        }
-
-        LinearLayout.LayoutParams TopLayoutParams = (LinearLayout.LayoutParams) TopLayout
-                .getLayoutParams();
-
-        if (TopLayoutParams == null) {
-            int height = (int) (mActivity.getResources().getDisplayMetrics().heightPixels * SIZE.KEYBOARY_T_H);
-            TopLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, height));
-        } else {
-            TopLayoutParams.height = (int) (mActivity.getResources().getDisplayMetrics().heightPixels * SIZE.KEYBOARY_T_H);
         }
     }
 
@@ -156,11 +119,7 @@ public class KeyboardUtil {
             } catch (NoSuchMethodException e) {
                 edit.setInputType(InputType.TYPE_NULL);
                 e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (IllegalArgumentException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
+            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                 e.printStackTrace();
             }
         }
@@ -188,62 +147,6 @@ public class KeyboardUtil {
         return ed;
     }
 
-    //初始化滑动handler
-    @SuppressLint("HandlerLeak")
-    private void initScrollHandler(View rootView, ScrollView scrollView) {
-        this.sv_main = scrollView;
-        this.root_view = rootView;
-        mHandler = new Handler() {
-            @Override
-            public void handleMessage(@NonNull Message msg) {
-                super.handleMessage(msg);
-                if (msg.what == ed.getId()) {
-                    if (sv_main != null)
-                        sv_main.smoothScrollTo(0, scrollTo);
-                }
-            }
-        };
-    }
-
-    //滑动监听
-    private void keyBoardScroll(final EditText editText, int scorllTo) {
-        this.scrollTo = scorllTo;
-        ViewTreeObserver vto_bighexagon = root_view.getViewTreeObserver();
-        vto_bighexagon.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                Message msg = new Message();
-                msg.what = editText.getId();
-                mHandler.sendMessageDelayed(msg, 500);
-                // // 防止多次促发
-                root_view.getViewTreeObserver()
-                        .removeGlobalOnLayoutListener(this);
-            }
-        });
-    }
-
-    //设置一些不需要使用这个键盘的edittext,解决切换问题
-    public void setOtherEdittext(EditText... edittexts) {
-        for (EditText editText : edittexts) {
-            editText.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-                    if (event.getAction() == MotionEvent.ACTION_UP) {
-                        //防止没有隐藏键盘的情况出现
-                        new Handler().postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                hideKeyboardLayout();
-                            }
-                        }, 300);
-                        ed = (EditText) v;
-                        hideKeyboardLayout();
-                    }
-                    return false;
-                }
-            });
-        }
-    }
 
     class finishListener implements View.OnClickListener {
 
@@ -302,13 +205,13 @@ public class KeyboardUtil {
                         editable.delete(start - 1, start);
                     }
                 }
-            } else if(primaryCode == 112){
+            } else if (primaryCode == 88) {
                 if (editable != null && editable.length() > 0) {
                     if (start > 0) {
                         editable.delete(0, start);
                     }
                 }
-            }else {
+            } else {
                 editable.insert(start, Character.toString((char) primaryCode));
             }
         }
@@ -331,21 +234,14 @@ public class KeyboardUtil {
 
         keyboardView.setEnabled(true);
         keyboardView.setOnKeyboardActionListener(listener);
-        keyboardView.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                return event.getAction() == MotionEvent.ACTION_MOVE;
-            }
-        });
+        keyboardView.setOnTouchListener((v, event) -> event.getAction() == MotionEvent.ACTION_MOVE);
     }
 
     private void initInputType() {
-        if (inputType == INPUTTYPE_NUM_X) {
-            initKeyBoard(R.id.keyboard_view);
-            keyboardView.setPreviewEnabled(false);
-            numKeyboard = new Keyboard(mContext, R.xml.symbols_x);
-            setMyKeyBoard(numKeyboard);
-        }
+        initKeyBoard(R.id.keyboard_view);
+        keyboardView.setPreviewEnabled(false);
+        numKeyboard = new Keyboard(mContext, R.xml.symbols_x);
+        setMyKeyBoard(numKeyboard);
     }
 
     private void setMyKeyBoard(Keyboard newkeyboard) {
@@ -367,24 +263,16 @@ public class KeyboardUtil {
     }
 
     //新的show方法
-    void showKeyBoardLayout(final EditText editText, int keyBoardType, int scrollTo) {
-        if (editText.equals(ed) && getKeyboardState() && inputType == keyBoardType)
+    public void showKeyBoardLayout() {
+        if (getKeyboardState())
             return;
 
-        inputType = keyBoardType;
-        this.scrollTo = scrollTo;
-
-        if (setKeyBoardCursorNew(editText)) {
+        if (setKeyBoardCursorNew(mEditText)) {
             Handler showHandler = new Handler();
-            showHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    show(editText);
-                }
-            }, 400);
+            showHandler.postDelayed(() -> show(mEditText), 400);
         } else {
             //直接显示
-            show(editText);
+            show(mEditText);
         }
     }
 
@@ -395,10 +283,6 @@ public class KeyboardUtil {
         showKeyboard();
         if (keyBoardStateChangeListener != null)
             keyBoardStateChangeListener.KeyBoardStateChange(KEYBOARD_SHOW, editText);
-        //用于滑动
-        if (scrollTo >= 0) {
-            keyBoardScroll(editText, scrollTo);
-        }
     }
 
     private void hideKeyboard() {
@@ -412,10 +296,6 @@ public class KeyboardUtil {
         if (layoutView != null) {
             layoutView.setVisibility(View.GONE);
         }
-    }
-
-    public interface InputFinishListener {
-        void inputHasOver(int onclickType, EditText editText);
     }
 
     /**

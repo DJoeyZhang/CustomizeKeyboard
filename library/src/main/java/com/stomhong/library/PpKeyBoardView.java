@@ -47,13 +47,8 @@ public class PpKeyBoardView extends KeyboardView {
 
     //数字键盘
     private void drawNumSpecialKey(Key key, Canvas canvas) {
-        if (key.codes[0] == -5) {
-            drawKeyBackground(R.drawable.btn_keyboard_key_num_delete, canvas, key);
-        }
-
         // 顶部按键
         if (key.codes[0] == -3 && key.label == null) {
-            drawKeyBackground(R.drawable.btn_keyboard_key_pull, canvas, key);
             drawText(canvas, key);
         }
 
@@ -63,7 +58,6 @@ public class PpKeyBoardView extends KeyboardView {
                 || key.codes[0] == 88
                 || (key.codes[0] == -4 && key.label != null)
                 || key.codes[0] == 46) {
-            drawKeyBackground(R.drawable.btn_keyboard_key2, canvas, key);
             drawText(canvas, key);
         }
     }

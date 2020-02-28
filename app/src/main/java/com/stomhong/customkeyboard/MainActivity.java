@@ -51,31 +51,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initMoveKeyBoard() {
-        keyboardUtil = new KeyboardUtil(this, rootView, scrollView);
-        keyboardUtil.setOtherEdittext(normalEd);
-        // monitor the KeyBarod state
-        keyboardUtil.setKeyBoardStateChangeListener(new KeyBoardStateListener());
-        // monitor the finish or next Key
-        keyboardUtil.setInputOverListener(new inputOverListener());
-        specialEd.setOnTouchListener(new KeyboardTouchListener(keyboardUtil, KeyboardUtil.INPUTTYPE_NUM_X, -1));
+        keyboardUtil = new KeyboardUtil(this,rootView);
+        keyboardUtil.showKeyBoardLayout();
     }
 
-    class KeyBoardStateListener implements KeyboardUtil.KeyBoardStateChangeListener {
 
-        @Override
-        public void KeyBoardStateChange(int state, EditText editText) {
-//            System.out.println("state" + state);
-//            System.out.println("editText" + editText.getText().toString());
-        }
-    }
-
-    class inputOverListener implements KeyboardUtil.InputFinishListener {
-
-        @Override
-        public void inputHasOver(int onclickType, EditText editText) {
-//            System.out.println("onclickType" + onclickType);
-//            System.out.println("editText" + editText.getText().toString());
-        }
-    }
 
 }
